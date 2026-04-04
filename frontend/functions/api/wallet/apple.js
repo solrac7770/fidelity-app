@@ -18,27 +18,30 @@ function fixPem(pem) {
 function createPkcs7Signature(manifestBuffer, signerCertPem, signerKeyPem, wwdrCertPem) {
   try {
     const p7 = forge.pkcs7.createSignedData();
-    p7.content = forge.util.createBuffer(manifestBuffer.toString('binary'), 'binary');
-    
+    // Apple Wallet requires the content as a ByteStringBuffer
+    p7.content = new forge.util.ByteStringBuffer(manifestBuffer);
+
     const signerCert = forge.pki.certificateFromPem(fixPem(signerCertPem));
-    p7.addCertificate(signerCert);
-    
+    // WWDR must be added first, then signer cert
     if (wwdrCertPem) {
       p7.addCertificate(forge.pki.certificateFromPem(fixPem(wwdrCertPem)));
     }
-    
-    const privateKey = forge.pki.privateKeyFromPem(fixPem(signerKeyPem));
+    p7.addCertificate(signerCert);
+
+    const privateKey = forge.pki.decryptRsaPrivateKey(fixPem(signerKeyPem)) ||
+                       forge.pki.privateKeyFromPem(fixPem(signerKeyPem));
     p7.addSigner({
       key: privateKey,
       certificate: signerCert,
-      digestAlgorithm: forge.pki.oids.sha256,
+      // Apple Wallet requires SHA1 (not SHA256) for the digest algorithm
+      digestAlgorithm: forge.pki.oids.sha1,
       authenticatedAttributes: [
         { type: forge.pki.oids.contentType, value: forge.pki.oids.data },
         { type: forge.pki.oids.messageDigest },
         { type: forge.pki.oids.signingTime }
       ]
     });
-    
+
     p7.sign({ detached: true });
     return Buffer.from(forge.asn1.toDer(p7.toAsn1()).getBytes(), 'binary');
   } catch (err) {
@@ -170,13 +173,14 @@ export async function onRequest(context) {
     zip.file('icon@2x.png', logoData);
     zip.file('logo.png', logoData);
 
-    // 3. Manifest
+    // 3. Manifest — Apple Wallet requires SHA1 hashes (not SHA256)
     const manifest = {};
     for (const [name, file] of Object.entries(zip.files)) {
       if (file.dir) continue;
-      const content = await file.async('uint8array');
-      const hash = await crypto.subtle.digest('SHA-256', content);
-      manifest[name] = Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+      const content = await file.async('nodebuffer');
+      const md = forge.md.sha1.create();
+      md.update(content.toString('binary'));
+      manifest[name] = md.digest().toHex();
     }
     const manifestBuffer = Buffer.from(JSON.stringify(manifest));
     zip.file('manifest.json', manifestBuffer);
@@ -192,8 +196,7 @@ export async function onRequest(context) {
       status: 200,
       headers: {
         'Content-Type': 'application/vnd.apple.pkpass',
-        'Content-Disposition': 'inline; filename="pass.pkpass"',
-        ...corsHeaders
+        'Content-Length': String(passBuffer.byteLength),
       }
     });
 
