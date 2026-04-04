@@ -131,6 +131,9 @@ export default function CustomerRegister() {
   const [qrValue, setQrValue] = useState('');
   const [walletLoading, setWalletLoading] = useState(false);
   const [walletError, setWalletError] = useState('');
+  const [puntosActuales, setPuntosActuales] = useState(0);
+  const [sellosActuales, setSellosActuales] = useState(0);
+  const [nivelActual, setNivelActual] = useState('Bronce');
   const [error, setError] = useState('');
   const [form, setForm] = useState({ nombre: '', celular: '' });
 
@@ -205,14 +208,18 @@ export default function CustomerRegister() {
 
       const { data: existingCards } = await supabase
         .from('tarjetas_activas')
-        .select('id, qr_value')
+        .select('id, qr_value, puntos_actuales, total_sellos, nivel_actual')
         .eq('comercio_id', comercioId)
         .eq('cliente_id', clienteId)
         .limit(1);
 
       if (existingCards && existingCards.length > 0) {
-        setTarjetaId(existingCards[0].id);
-        setQrValue(existingCards[0].qr_value);
+        const card = existingCards[0];
+        setTarjetaId(card.id);
+        setQrValue(card.qr_value);
+        setPuntosActuales(card.puntos_actuales || 0);
+        setSellosActuales(card.total_sellos || 0);
+        setNivelActual(card.nivel_actual || 'Bronce');
         setSuccess(true);
         setSubmitting(false);
         return;
@@ -261,9 +268,9 @@ export default function CustomerRegister() {
           clienteNombre: form.nombre,
           qrValue,
           tipoFidelizacion: comercio.tipo_fidelizacion,
-          puntos: 0,
-          sellos: 0,
-          nivel: 'Bronce',
+          puntos: puntosActuales,
+          sellos: sellosActuales,
+          nivel: nivelActual,
           colorFondo: comercio.color_fondo,
           colorTexto: comercio.color_texto,
           logoUrl: comercio.logo_url?.startsWith('http') ? comercio.logo_url : null,
@@ -271,7 +278,7 @@ export default function CustomerRegister() {
       });
 
       const data = await res.json();
-      
+
       if (data.url) {
         window.location.href = data.url;
       } else {
@@ -294,9 +301,9 @@ export default function CustomerRegister() {
       clienteNombre: form.nombre,
       qrValue,
       tipoFidelizacion: comercio.tipo_fidelizacion,
-      puntos: 0,
-      sellos: 0,
-      nivel: 'Bronce',
+      puntos: puntosActuales,
+      sellos: sellosActuales,
+      nivel: nivelActual,
       colorFondo: comercio.color_fondo,
       colorTexto: comercio.color_texto,
       logoUrl: comercio.logo_url?.startsWith('http') ? comercio.logo_url : null,
