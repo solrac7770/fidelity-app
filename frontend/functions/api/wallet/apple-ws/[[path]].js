@@ -228,7 +228,9 @@ async function signEs256Jwt(payload, p8Pem, keyId) {
     .replace(/-----BEGIN PRIVATE KEY-----/g, '')
     .replace(/-----END PRIVATE KEY-----/g, '')
     .replace(/\\n/g, '')
-    .replace(/\s/g, '');
+    .replace(/\n/g, '')
+    .replace(/\r/g, '')
+    .replace(/\s+/g, '');
   const binaryKey = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0));
   const cryptoKey = await crypto.subtle.importKey(
     'pkcs8', binaryKey.buffer,
