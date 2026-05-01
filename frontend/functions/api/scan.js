@@ -152,9 +152,29 @@ async function signEs256Jwt(payload, p8Pem, keyId) {
 }
 
 async function notifyAppleWalletDevices(tarjetaId, updatedCard, env) {
-  if (!env.APPLE_APNS_KEY || !env.APPLE_APNS_KEY_ID || !env.APPLE_TEAM_ID) return;
-
   const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
+
+  // Log helper
+  const log = async (result, extra) => {
+    try {
+      await supabase.from('pass_fetch_log').insert([{
+        serial_number: tarjetaId,
+        result,
+        puntos: updatedCard.puntos_actuales || updatedCard.total_sellos || 0,
+        extra: JSON.stringify(extra),
+      }]);
+    } catch (_) {}
+  };
+
+  if (!env.APPLE_APNS_KEY || !env.APPLE_APNS_KEY_ID || !env.APPLE_TEAM_ID) {
+    await log('apns_skip', {
+      reason: 'missing_env',
+      hasKey: !!env.APPLE_APNS_KEY,
+      hasKeyId: !!env.APPLE_APNS_KEY_ID,
+      hasTeamId: !!env.APPLE_TEAM_ID,
+    });
+    return;
+  }
 
   // Mark the pass as updated so Apple Wallet web service returns it in the list
   await supabase
@@ -168,29 +188,52 @@ async function notifyAppleWalletDevices(tarjetaId, updatedCard, env) {
     .select('push_token, pass_type_identifier')
     .eq('serial_number', tarjetaId);
 
-  if (!registrations || registrations.length === 0) return;
+  if (!registrations || registrations.length === 0) {
+    await log('apns_no_registrations', { tarjetaId });
+    return;
+  }
 
-  const now = Math.floor(Date.now() / 1000);
-  const apnsJwt = await signEs256Jwt(
-    { iss: env.APPLE_TEAM_ID, iat: now },
-    env.APPLE_APNS_KEY,
-    env.APPLE_APNS_KEY_ID
-  );
+  await log('apns_attempting', {
+    registrationCount: registrations.length,
+    pushTokenPrefix: registrations[0]?.push_token?.slice(0, 10),
+  });
+
+  let apnsJwt;
+  try {
+    const now = Math.floor(Date.now() / 1000);
+    apnsJwt = await signEs256Jwt(
+      { iss: env.APPLE_TEAM_ID, iat: now },
+      env.APPLE_APNS_KEY,
+      env.APPLE_APNS_KEY_ID
+    );
+  } catch (jwtErr) {
+    await log('apns_jwt_error', { error: jwtErr.message });
+    return;
+  }
 
   // Push to all registered devices concurrently
-  await Promise.allSettled(registrations.map(reg =>
-    fetch(`https://api.push.apple.com/3/device/${reg.push_token}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apnsJwt}`,
-        'apns-topic': reg.pass_type_identifier,
-        'apns-push-type': 'background',
-        'apns-priority': '5',
-        'Content-Type': 'application/json',
-      },
-      body: '{}',
-    })
-  ));
+  const results = await Promise.allSettled(registrations.map(async (reg) => {
+    try {
+      const res = await fetch(`https://api.push.apple.com/3/device/${reg.push_token}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apnsJwt}`,
+          'apns-topic': reg.pass_type_identifier,
+          'apns-push-type': 'background',
+          'apns-priority': '5',
+          'Content-Type': 'application/json',
+        },
+        body: '{}',
+      });
+      const body = await res.text();
+      return { status: res.status, body, token: reg.push_token.slice(0, 10) };
+    } catch (fetchErr) {
+      return { error: fetchErr.message, token: reg.push_token.slice(0, 10) };
+    }
+  }));
+
+  const pushResults = results.map(r => r.status === 'fulfilled' ? r.value : { error: r.reason?.message });
+  await log('apns_push', { results: pushResults });
 }
 
 // ─── Main handler ─────────────────────────────────────────────────────────────
