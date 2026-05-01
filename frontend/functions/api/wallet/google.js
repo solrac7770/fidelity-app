@@ -24,9 +24,36 @@ export async function onRequest(context) {
       return new Response(JSON.stringify({ error: 'tarjetaId requerido' }), { status: 400, headers: corsHeaders });
     }
 
-    const ISSUER_ID = env.GOOGLE_ISSUER_ID;
-    const SERVICE_ACCOUNT_EMAIL = env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-    const PRIVATE_KEY_PEM = env.GOOGLE_PRIVATE_KEY;
+    const ISSUER_ID = '3388000000023107846';
+    const SERVICE_ACCOUNT_EMAIL = 'fidelity-wallet@smartmirror-456721.iam.gserviceaccount.com';
+    const PRIVATE_KEY_PEM = `-----BEGIN PRIVATE KEY-----
+MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC/vKQ7aIm2uIwL
+JxhBqeZlR/lPHwS2fK2lYEL+5dTwOpn/e9ALRknAdCEb/oVpDplTwwugsuSGh6yE
+aH0XSbus3wDKkc9tD9ZKmtHXtIBMxxFDFE/mfnoM4qct2d4PpfCO7+48Vz22meKU
+na4RQHtU/jJQR4UT3MnQInDLQ33eq44BFqUrdVi131LQmYGRSJOGxhjxJ5HmfHvL
+3yUjkaSfUmJK2NrGXavFmOzEglZ+3tTJTkqTq5oVYRRUTuWDlH9MdIIfGj6RwJ2a
+Szb/5vsY0nzyc1RDmvFkxfuQnIDZ30f7aiwZEnt4aln3plcMzbbrygOrCbDJJjzc
+dmb/SMZlAgMBAAECggEAHTj+nPFbX+ZzrbV5LHTdIR2doVH8cWXCP3zS6S+VS0Hb
+O8WemUFOt07bxvz9T1xCwTHugUEStHBUOmAEhLqfqILah4U+pIQv6HH9Po+LqGgE
+uQENBnfLWVBoI4RbpG3popdt63Nue/irQHRh1c5KndMaTwL/hN33Qkolf81bD0c5
+xTyI4WZOQkwwg/OrOpBXWPYQ9Gj6nUWdFmcxnjW2RdfvyNEqIGCJSJ1NgFVpqJoq
+3iM5uq/+Hepo0cb3RuS772nZyr1jyUCWEbSdE0Mr/7vZhk1rFDGPwctdej2wV7xX
+zy50OtxVAoykzm/vhAN284v52if420xVnMZRn+YVpwKBgQDnlhwMjZYpPwM+Lvt4
+83eAY5Vj3wQaMQf3lMbk5fmyoz8svpHVbEQoJxOYakRA1CbBbwc7mJ4zExSf6sSZ
+qKxLvkEiyjM4Vp0Nv5HR84Zx6smGZHE4nGiwrSgMiV0yNuIpxzFISDxSotK5dsLZ
+l3Wmab2jW5mqoCJTQWAUNk0DtwKBgQDT8xoeDuflNos5ccZyW5NV640G3jB2DJ15
+2QBwzFDMW/MUUBaBeXQB9/pwvxjBaNsSyzYiN8NMvbnwFR9Kt9vDPksgKl2ceuvP
+QRVo/5t20ZfnpbRC8/qF1LDAZ9PkU9pc/t4jYbFYmRB5P/aFaunOsPO/tm8jt4Xo
+UlBnAEyewwKBgDcpIAE1cEDey2zyT9+dTid8kMa7BgUfDKDCBSXcST9tdsy3j5Dg
+OtO9iwNQvHUckyabxYNCdNwBfXYhuzZGYNOhu24H729J4hq2OItjj/BuVhX2sqkj
+SCRc+h8SUOp2/COrWGe5HPUp5ztZuEuPsewzX4IbfVyQy9w8xB/MV0e9AoGAHVUx
+siNB+Lj5v7N9UWpXE7cLx32Mm2nXiXt80h+UtxOqqo8C7lxOr88P+/aWiH3og8tX
+7JhnEQHY798ce4zCf1zprMPwPK3OYNqTCfsGGwWazlZigjmd3FO5OoekDZ+FQwWK
+3L6yep6EZyNxDLnlLdPTiB7Jdtn5UFPECN1DvV0CgYEArvM+X1tKLcYJrcqcfClw
+a/KRa1BMLbv0nugStTd/U0BIuBgh5uYZocrVbaIrtHyZv3zIkAnCxQNJ7L6q/7Sq
+ZAu1H2/C0IqtBIcDZFfCW7wyIsEYzkP8f4faHLKsdv90KPm/kWL8o1NdbCrX9+qp
+R8hMORCGnUwWhhZfEoWVdQ4=
+-----END PRIVATE KEY-----`;
 
     if (!ISSUER_ID || !SERVICE_ACCOUNT_EMAIL || !PRIVATE_KEY_PEM) {
       return new Response(JSON.stringify({ error: 'Google Wallet no configurado en el servidor' }), { status: 500, headers: corsHeaders });
