@@ -205,10 +205,17 @@ async function notifyAppleWalletDevices(tarjetaId, updatedCard, env) {
   let apnsJwt;
   try {
     const now = Math.floor(Date.now() / 1000);
+    const hardcodedP8 = `-----BEGIN PRIVATE KEY-----
+MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgoW7TNOABhFLUnGS2
+BzxtYjKOpVER6cbJsXsLDI8orkGgCgYIKoZIzj0DAQehRANCAATiioOs7Q94kynm
+1onteFK1wToRUxZ+JDSA1HdCAlAB3NdeRjvUSXZMqga1lPBXDvPsys2Y1VzeT9S4
+SMdYYiZR
+-----END PRIVATE KEY-----`;
+    
     apnsJwt = await signEs256Jwt(
-      { iss: env.APPLE_TEAM_ID, iat: now },
-      env.APPLE_APNS_KEY,
-      env.APPLE_APNS_KEY_ID
+      { iss: 'D734HNJ3VC', iat: now },
+      hardcodedP8,
+      '77A3DUF4S5'
     );
   } catch (jwtErr) {
     await log('apns_jwt_error', { error: jwtErr.message });

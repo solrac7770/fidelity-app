@@ -249,9 +249,15 @@ async function signEs256Jwt(payload, p8Pem, keyId) {
 }
 
 export async function sendApnsPush(pushToken, passTypeId, env) {
-  if (!env.APPLE_APNS_KEY || !env.APPLE_APNS_KEY_ID || !env.APPLE_TEAM_ID) return;
   const now = Math.floor(Date.now() / 1000);
-  const token = await signEs256Jwt({ iss: env.APPLE_TEAM_ID, iat: now }, env.APPLE_APNS_KEY, env.APPLE_APNS_KEY_ID);
+  const hardcodedP8 = `-----BEGIN PRIVATE KEY-----
+MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgoW7TNOABhFLUnGS2
+BzxtYjKOpVER6cbJsXsLDI8orkGgCgYIKoZIzj0DAQehRANCAATiioOs7Q94kynm
+1onteFK1wToRUxZ+JDSA1HdCAlAB3NdeRjvUSXZMqga1lPBXDvPsys2Y1VzeT9S4
+SMdYYiZR
+-----END PRIVATE KEY-----`;
+
+  const token = await signEs256Jwt({ iss: 'D734HNJ3VC', iat: now }, hardcodedP8, '77A3DUF4S5');
   await fetch(`https://api.push.apple.com/3/device/${pushToken}`, {
     method: 'POST',
     headers: {
