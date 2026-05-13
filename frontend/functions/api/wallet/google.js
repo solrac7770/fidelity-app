@@ -115,10 +115,16 @@ R8hMORCGnUwWhhZfEoWVdQ4=
     };
 
     if (comercio.logo_url?.startsWith('http')) {
-      genericObject.logo = { sourceUri: { uri: comercio.logo_url } };
+      genericObject.logo = { 
+        sourceUri: { uri: comercio.logo_url },
+        contentDescription: { defaultValue: { language: 'es-ES', value: comercio.nombre || 'Logo' } }
+      };
     }
     if (comercio.hero_image_url?.startsWith('http')) {
-      genericObject.heroImage = { sourceUri: { uri: comercio.hero_image_url } };
+      genericObject.heroImage = { 
+        sourceUri: { uri: comercio.hero_image_url },
+        contentDescription: { defaultValue: { language: 'es-ES', value: 'Imagen principal' } }
+      };
     }
 
     const genericClass = {
